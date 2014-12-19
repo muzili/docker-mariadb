@@ -3,11 +3,12 @@
 FROM mariadb:latest
 MAINTAINER Joshua Lee <muzili@gmail.com>
 
-# Ensure UTF-8
-RUN locale-gen en_US.UTF-8
 
 # Install other tools.
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools locales
+
+# Ensure UTF-8
+RUN locale-gen en_US.UTF-8
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
