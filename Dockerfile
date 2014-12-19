@@ -1,11 +1,19 @@
 #MariaDB (https://mariadb.org/)
 
-FROM mariadb:latest
+FROM phusion/baseimage:0.9.15
 MAINTAINER Joshua Lee <muzili@gmail.com>
 
+# Disable SSH (Not using it at the moment).
+RUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh
+
+# Install MariaDB from repository.
+ENV MARIADB_MAJOR 10.0
+RUN echo "deb http://ftp.osuosl.org/pub/mariadb/repo/$MARIADB_MAJOR/ubuntu trusty main" > /etc/apt/sources.list.d/mariadb.list && \
+    apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mariadb-server mariadb-server-$MARIADB_MAJOR
 
 # Install other tools.
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools locales
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools
 
 # Ensure UTF-8
 RUN locale-gen en_US.UTF-8
@@ -31,4 +39,5 @@ RUN touch /firstrun
 # Expose our data, log, and configuration directories.
 VOLUME ["/data", "/var/log/mysql"]
 
-CMD ["/scripts/start.sh"]
+# Use baseimage-docker's init system.
+CMD ["/sbin/my_init", "--", "/scripts/start.sh"]
