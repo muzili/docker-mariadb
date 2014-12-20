@@ -12,6 +12,10 @@ else
   source /scripts/normal_run.sh
 fi
 
+pre_start_action
+
+post_start_action
+
 # Start MariaDB
 echo "Starting MariaDB..."
 exec /usr/bin/mysqld_safe
