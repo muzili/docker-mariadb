@@ -43,10 +43,6 @@ EOF
   echo "========================================================================"
 
   mysqladmin -uroot shutdown
-
-  # Ensure mysql owns the DATA_DIR
-  chown -R mysql $DATA_DIR
-  chown root $DATA_DIR/debian*.flag
 }
 
 post_start_action() {
