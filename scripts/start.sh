@@ -5,6 +5,9 @@
 set -e
 
 DATA_DIR=/data
+LOG_DIR=/var/log/mysql
+chown -R mysql:adm /var/log/mysql
+chown -R mysql:adm /data
 
 if [[ -e /firstrun ]]; then
   source /scripts/first_run.sh
