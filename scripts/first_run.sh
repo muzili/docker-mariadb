@@ -31,6 +31,14 @@ pre_start_action() {
       GRANT ALL PRIVILEGES ON *.* TO '$USER'@'%' WITH GRANT OPTION;
 EOF
 
+  # The password for 'debian-sys-maint'@'localhost' is auto generated.
+  # The database inside of DATA_DIR may not have been generated with this password.
+  # So, we need to set this for our database to be portable.
+  # And mysql require the account to shutdown
+  DB_MAINT_PASS=$(cat /etc/mysql/debian.cnf | grep -m 1 "password\s*=\s*"| sed 's/^password\s*=\s*//')
+  mysql -u root -e \
+        "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$DB_MAINT_PASS';"
+
   echo "=> Done!"
 
   echo "========================================================================"

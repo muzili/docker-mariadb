@@ -1,0 +1,5 @@
+mysql:
+  image: muzili/mariadb:latest
+  volumes:
+    - ./data/db:/data
+    - ./data/log:/var/log/mysql
