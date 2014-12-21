@@ -39,6 +39,8 @@ EOF
   mysql -u root -e \
         "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$DB_MAINT_PASS';"
 
+  # Set up restrict mode for phabricator
+  sed -i -e's/^#*sql_mode.*/sql_mode\t= STRICT_ALL_TABLES\nft_min_word_len\t= 3/g' /etc/mysql/my.cnf
   echo "=> Done!"
 
   echo "========================================================================"
