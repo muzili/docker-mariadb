@@ -21,4 +21,4 @@ post_start_action
 
 # Start MariaDB
 echo "Starting MariaDB..."
-exec /usr/bin/mysqld_safe
+exec mysqld
