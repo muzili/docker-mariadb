@@ -13,13 +13,7 @@ pre_start_action() {
 
   /usr/bin/mysqld_safe > /dev/null 2>&1 &
 
-  RET=1
-  while [[ RET -ne 0 ]]; do
-      echo "=> Waiting for confirmation of MariaDB service startup"
-      sleep 5
-      mysql -uroot -e "status" > /dev/null 2>&1
-      RET=$?
-  done
+  mysqladmin --silent --wait=36 ping || exit 1
 
     # Create the superuser.
   mysql -u root <<-EOF
