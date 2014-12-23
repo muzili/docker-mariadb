@@ -3,10 +3,6 @@
 FROM phusion/baseimage:0.9.15
 MAINTAINER Joshua Lee <muzili@gmail.com>
 
-# Create a directory for the source code.
-RUN mkdir -p /var/log/mysql && \
-    mkdir -p /data
-
 # Disable SSH (Not using it at the moment).
 RUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh
 

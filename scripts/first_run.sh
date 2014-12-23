@@ -7,6 +7,11 @@ pre_start_action() {
   echo "MARIADB_PASS=$PASS"
   echo "MARIADB_DATA_DIR=$DATA_DIR"
 
+  # Create a directory for the source code.
+  mkdir -p /var/log/mysql
+  mkdir -p /data
+  chown mysql -R /data /var/log/mysql
+
   echo "=> Installing MariaDB ..."
   mysql_install_db > /dev/null 2>&1
   echo "=> Done!"
@@ -15,7 +20,7 @@ pre_start_action() {
 
   mysqladmin --silent --wait=36 ping || exit 1
 
-    # Create the superuser.
+  # Create the superuser.
   mysql -u root <<-EOF
       DELETE FROM mysql.user WHERE user = '$USER';
       FLUSH PRIVILEGES;
@@ -34,12 +39,14 @@ EOF
         "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$DB_MAINT_PASS';"
 
   # Set up restrict mode for phabricator
-  curl https://raw.githubusercontent.com/phacility/phabricator/master/resources/sql/stopwords.txt >/etc/mysql/stopwords.txt
+  curl https://raw.githubusercontent.com/phacility/phabricator/master/resources/sql/stopwords.txt >/etc/mysql/stopwords.txt 2>/dev/null
   sed -i -e's/^#*sql_mode.*/sql_mode\t= STRICT_ALL_TABLES\nft_stopword_file= \/etc\/mysql\/stopwords.txt\nft_min_word_len\t= 3/g' /etc/mysql/my.cnf
   sed -i -e 's/^datadir\s*=.*/datadir = \/data/' /etc/mysql/my.cnf
   sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
   # Setup the memory based on https://github.com/yesnault/docker-phabricator/issues/13
   sed -i -e 's/^innodb_buffer_pool_size\s*=.*/innodb_buffer_pool_size = 410M/' /etc/mysql/my.cnf
+
+  cat /etc/mysql/my.cnf | grep -v '^#'
 
   echo "=> Done!"
 
