@@ -17,10 +17,7 @@ RUN echo "deb http://ftp.osuosl.org/pub/mariadb/repo/$MARIADB_MAJOR/ubuntu trust
     DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mariadb-server mariadb-server-$MARIADB_MAJOR pwgen inotify-tools && \
     locale-gen en_US.UTF-8 && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    sed -i -e 's/^datadir\s*=.*/datadir = \/data/' /etc/mysql/my.cnf && \
-    sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf && \
-    sed -i -e 's/^innodb_buffer_pool_size\s*=.*/innodb_buffer_pool_size = 128M/' /etc/mysql/my.cnf
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 EXPOSE 3306
 ADD scripts /scripts
