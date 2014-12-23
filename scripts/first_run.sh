@@ -44,7 +44,7 @@ EOF
   sed -i -e 's/^datadir\s*=.*/datadir = \/data/' /etc/mysql/my.cnf
   sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
   # Setup the memory based on https://github.com/yesnault/docker-phabricator/issues/13
-  sed -i -e 's/^innodb_buffer_pool_size\s*=.*/innodb_buffer_pool_size = 410M/' /etc/mysql/my.cnf
+  sed -i -e 's/^innodb_buffer_pool_size\s*=.*/innodb_buffer_pool_size = 225M/' /etc/mysql/my.cnf
 
   cat /etc/mysql/my.cnf | grep -v '^#'
 
