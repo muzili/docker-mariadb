@@ -20,9 +20,13 @@ RUN echo "deb http://ftp.osuosl.org/pub/mariadb/repo/$MARIADB_MAJOR/ubuntu trust
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 EXPOSE 3306
+ADD https://raw.githubusercontent.com/phacility/phabricator/master/resources/sql/stopwords.txt /etc/mysql/stopwords.txt
+ADD conf.d/ /etc/mysql/conf.d/
 ADD scripts /scripts
-RUN chmod +x /scripts/start.sh
-RUN touch /firstrun
+RUN chmod +x /scripts/start.sh && \
+    chmod 644 /etc/mysql/stopwords.txt && \
+    chmod 644 /etc/mysql/conf.d/*.cnf && \
+    touch /firstrun
 
 # Expose our data, log, and configuration directories.
 VOLUME ["/data", "/var/log/mysql"]

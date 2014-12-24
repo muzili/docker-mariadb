@@ -13,13 +13,8 @@ pre_start_action() {
   chown mysql -R /data /var/log/mysql
 
   # Set up restrict mode for phabricator
-  curl https://raw.githubusercontent.com/phacility/phabricator/master/resources/sql/stopwords.txt >/etc/mysql/stopwords.txt 2>/dev/null
-  sed -i -e's/^#*sql_mode.*/sql_mode\t= STRICT_ALL_TABLES\nft_stopword_file= \/etc\/mysql\/stopwords.txt\nft_min_word_len\t= 3/g' /etc/mysql/my.cnf
   sed -i -e 's/^datadir\s*=.*/datadir = \/data/' /etc/mysql/my.cnf
   sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
-  # Setup the memory based on https://github.com/yesnault/docker-phabricator/issues/13
-  sed -i -e 's/^innodb_buffer_pool_size\s*=.*/innodb_buffer_pool_size = 410M/' /etc/mysql/my.cnf
-
   cat /etc/mysql/my.cnf | grep -v '^#'
 
   echo "=> Installing MariaDB ..."
