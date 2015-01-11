@@ -1,32 +1,41 @@
 USER=${USER:-admin}
 PASS=${PASS:-$(pwgen -s -1 16)}
+DB_USER=${DB_USER:-demo}
+DB_PASS=${DB_PASS:-$(pwgen -s -1 16)}
+DB_NAME=${DB_NAME:-demodb}
 
 pre_start_action() {
-  # Echo out info to later obtain by running `docker logs container_name`
-  echo "MARIADB_USER=$USER"
-  echo "MARIADB_PASS=$PASS"
-  echo "MARIADB_DATA_DIR=$DATA_DIR"
+    # Echo out info to later obtain by running `docker logs container_name`
+    echo "Super user: $USER"
+    echo "Super pass: $PASS"
+    echo "MARIADB_USER=$DB_USER"
+    echo "MARIADB_PASS=$DB_PASS"
+    echo "MARIADB_NAME=$DB_NAME"
+    echo "MARIADB_DATA_DIR=$DATA_DIR"
 
-  # Create a directory for the source code.
-  mkdir -p /var/log/mysql
-  mkdir -p /data
-  chown mysql -R /data /var/log/mysql
+    # Create a directory for the source code.
+    mkdir -p -m 700 /var/log/mysql
+    mkdir -p -m 700 /var/lib/mysql
+    chown mysql -R /var/lib/mysql /var/log/mysql
 
-  # Set up restrict mode for phabricator
-  sed -i -e 's/^datadir\s*=.*/datadir = \/data/' /etc/mysql/my.cnf
-  sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
-  cat /etc/mysql/my.cnf | grep -v '^#'
+    # fix permissions and ownership of /run/mysqld
+    mkdir -p -m 0755 /run/mysqld
+    chown -R mysql:root /run/mysqld
 
-  echo "=> Installing MariaDB ..."
-  mysql_install_db > /dev/null 2>&1
-  echo "=> Done!"
+    # Set up restrict mode for phabricator
+    sed -i -e 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
+    cat /etc/mysql/my.cnf | grep -v '^#'
 
-  /usr/bin/mysqld_safe > /dev/null 2>&1 &
+    echo "=> Installing MariaDB ..."
+    mysql_install_db --user=mysql
+    echo "=> Done!"
 
-  mysqladmin --silent --wait=36 ping || exit 1
+    /usr/bin/mysqld_safe > /dev/null 2>&1 &
 
-  # Create the superuser.
-  mysql -u root <<-EOF
+    mysqladmin --silent --wait=36 ping || exit 1
+
+    # Create the superuser.
+    mysql -u root <<-EOF
       DELETE FROM mysql.user WHERE user = '$USER';
       FLUSH PRIVILEGES;
       CREATE USER '$USER'@'localhost' IDENTIFIED BY '$PASS';
@@ -35,28 +44,44 @@ pre_start_action() {
       GRANT ALL PRIVILEGES ON *.* TO '$USER'@'%' WITH GRANT OPTION;
 EOF
 
-  # The password for 'debian-sys-maint'@'localhost' is auto generated.
-  # The database inside of DATA_DIR may not have been generated with this password.
-  # So, we need to set this for our database to be portable.
-  # And mysql require the account to shutdown
-  DB_MAINT_PASS=$(cat /etc/mysql/debian.cnf | grep -m 1 "password\s*=\s*"| sed 's/^password\s*=\s*//')
-  mysql -u root -e \
-        "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$DB_MAINT_PASS';"
+    #
+    # the default password for the debian-sys-maint user is randomly generated
+    # during the installation of the mysql-server package.
+    #
+    # Due to the nature of docker we blank out the password such that the maintenance
+    # user can login without a password.
+    #
+    sed 's/password = .*/password = /g' -i /etc/mysql/debian.cnf
+    mysql -u root -e \
+          "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '';"
 
-  echo "=> Done!"
+    if [ -n "${DB_NAME}" ]; then
+        for db in $(awk -F',' '{for (i = 1 ; i <= NF ; i++) print $i}' <<< "${DB_NAME}"); do
+            echo "Creating database \"$db\"..."
+            mysql -u root  \
+                  -e "CREATE DATABASE IF NOT EXISTS \`$db\` DEFAULT CHARACTER SET \`utf8\` COLLATE \`utf8_unicode_ci\`;"
+            if [ -n "${DB_USER}" ]; then
+                echo "Granting access to database \"$db\" for user \"${DB_USER}\"..."
+                mysql -u root \
+                      -e "GRANT ALL PRIVILEGES ON \`$db\`.* TO '${DB_USER}' IDENTIFIED BY '${DB_PASS}';"
+            fi
+        done
+    fi
 
-  echo "========================================================================"
-  echo "You can now connect to this MariaDB Server using:"
-  echo ""
-  echo "    mysql -u$USER -p$PASS -h<host> -P<port>"
-  echo ""
-  echo "Please remember to change the above password as soon as possible!"
-  echo "MariaDB user 'root' has no password but only allows local connections"
-  echo "========================================================================"
+    echo "=> Done!"
 
-  mysqladmin -uroot shutdown
+    echo "========================================================================"
+    echo "You can now connect to this MariaDB Server using:"
+    echo ""
+    echo "    mysql -u$DB_USER -p$DB_PASS -h<host> -P<port>"
+    echo ""
+    echo "Please remember to change the above password as soon as possible!"
+    echo "MariaDB user 'root' has no password but only allows local connections"
+    echo "========================================================================"
+
+    mysqladmin -uroot shutdown
 }
 
 post_start_action() {
-  rm /firstrun
+    rm /firstrun
 }
